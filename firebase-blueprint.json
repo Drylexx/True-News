@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "NewsItem": {
+      "title": "News Item",
+      "description": "An autonomously found and neutralized news article.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The neutral headline of the news" },
+        "content": { "type": "string", "description": "The neutral, balanced content" },
+        "sourceQuery": { "type": "string", "description": "The query used by AI to find this" },
+        "category": { "type": "string", "description": "The category of the news" },
+        "imageKeyword": { "type": "string", "description": "Keyword for image search" },
+        "videoUrl": { "type": "string", "description": "YouTube URL for video context" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "authorId": { "type": "string", "description": "UID of the user who triggered the search" }
+      },
+      "required": ["title", "content", "createdAt", "authorId"]
+    },
+    "ChatContext": {
+      "title": "Chat Context",
+      "description": "A conversation between a user and the AI about a specific news item.",
+      "type": "object",
+      "properties": {
+        "newsId": { "type": "string" },
+        "messages": { 
+          "type": "array", 
+          "items": { "type": "object", "properties": { "role": { "type": "string" }, "text": { "type": "string" } } }
+        },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["newsId", "messages", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/news/{newsId}": {
+      "schema": { "$ref": "#/entities/NewsItem" },
+      "description": "Global database of neutralized news. Anyone authenticated can read and create, but only owners can update/delete."
+    },
+    "/users/{userId}/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatContext" },
+      "description": "Private chat records for a user asking questions about news."
+    }
+  }
+}

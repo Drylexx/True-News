@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-brand-blue: #003cc7;
+  --color-paper: #ffffff;
+  --color-news-bg: #fcfcfc;
+  --color-ink: #111111;
+  --color-accent: #d40000;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+}
+
+@utility editorial-title {
+  @apply font-serif font-black tracking-tighter leading-[0.9] text-ink;
+}
+
+@utility italic-serif {
+  @apply font-serif italic font-normal;
+}
+
+@utility micro-label {
+  @apply text-[9px] font-extrabold uppercase tracking-[0.25em] text-gray-500;
+}
+
+/* Custom Editorial Components */
+.visible-grid {
+  @apply border-gray-100 border-l border-t;
+}
+
+.grid-cell {
+  @apply border-gray-100 border-r border-b;
+}
+
+.hover-lift {
+  @apply transition-all duration-500 hover:-translate-y-1;
+}
+
+.drop-cap p:first-of-type::first-letter {
+  @apply float-left text-7xl font-serif font-black mr-4 mt-2 text-ink leading-[0.8];
+}
+
+.news-border {
+  @apply border border-gray-100;
+}
+
+.section-title {
+  @apply editorial-title text-4xl mb-8 flex items-center gap-4;
+}
+
+.section-title::after {
+  content: "";
+  @apply flex-1 h-px bg-gray-100;
+}
+
+@keyframes scroll-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-scroll {
+  animation: scroll-x 30s linear infinite;
+}

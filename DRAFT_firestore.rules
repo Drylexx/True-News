@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitives
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    
+    // Auth validation including anonymous check
+    function isAuth() {
+      // For this app, we allow anonymous but verify it's a valid firebase auth object
+      return isSignedIn() && (request.auth.token.firebase.sign_in_provider == 'anonymous' || request.auth.token.email_verified == true);
+    }
+
+    // News Validation
+    function isValidNewsItem(news) {
+      return news.keys().hasAll(['title', 'content', 'createdAt', 'authorId'])
+        && news.title is string && news.title.size() <= 200
+        && news.content is string && news.content.size() <= 10000
+        && news.authorId == request.auth.uid
+        && news.createdAt is string && news.createdAt.size() <= 100
+        && (news.get('category', 'Portada') is string && news.get('category', 'Portada').size() <= 50)
+        && (news.get('imageKeyword', 'news') is string && news.get('imageKeyword', 'news').size() <= 50)
+        && (news.get('videoUrl', null) == null || (news.get('videoUrl', null) is string && news.get('videoUrl', null).size() <= 500));
+    }
+
+    match /news/{newsId} {
+      // 8. Secure List Queries: Evaluation of resource.data
+      allow list: if isAuth() && resource.data.authorId != null; // Simplified, in practice we'd check against something more specific if needed
+      allow get: if isAuth();
+      
+      allow create: if isAuth() && isValidNewsItem(incoming());
+      
+      allow update: if isAuth() 
+        && existing().authorId == request.auth.uid 
+        && isValidNewsItem(incoming())
+        && incoming().authorId == existing().authorId
+        && (
+          // Action: Edit content
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'category', 'imageKeyword', 'videoUrl', 'createdAt'])
+        );
+      
+      allow delete: if isAuth() && existing().authorId == request.auth.uid;
+    }
+
+    match /users/{userId}/chats/{chatId} {
+      function isValidChat(chat) {
+        return chat.keys().hasAll(['newsId', 'messages', 'createdAt'])
+          && chat.newsId is string && isValidId(chat.newsId)
+          && chat.messages is list && chat.messages.size() <= 100
+          && chat.createdAt is string; // ISO string from app
+      }
+
+      allow read: if isAuth() && request.auth.uid == userId;
+      allow write: if isAuth() && request.auth.uid == userId && isValidChat(incoming());
+    }
+  }
+}
