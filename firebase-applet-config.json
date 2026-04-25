@@ -1,10 +1,9 @@
 {
-  "projectId": "gen-lang-client-0445358951",
-  "appId": "1:714604906972:web:775c13a8e4821217f76719",
-  "apiKey": "AIzaSyD3ORBmmgmN5aoghBzAzhIzpM2lyIG4g9w",
-  "authDomain": "gen-lang-client-0445358951.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-9b4118c3-82aa-440e-aa61-3e0d6d1a3d92",
-  "storageBucket": "gen-lang-client-0445358951.firebasestorage.app",
-  "messagingSenderId": "714604906972",
-  "measurementId": ""
+  "apiKey": "AIzaSyDFcg_TfoktCj9wOymTPqSKiL7LuTZdDV4",
+  "authDomain": "true-news-26901.firebaseapp.com",
+  "projectId": "true-news-26901",
+  "storageBucket": "true-news-26901.firebasestorage.app",
+  "messagingSenderId": "1059814995123",
+  "appId": "1:1059814995123:web:dc040729107e9615cb6cc6",
+  "measurementId": "G-YR3Y71T1BS"
 }
