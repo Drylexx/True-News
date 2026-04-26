@@ -221,24 +221,67 @@ export default function App() {
     })();
   }, [selectedNews, user]);
 
-  // AUTO POPULATE
+  // AUTO POPULATE - una sola llamada al cargar
   useEffect(() => {
     if (!user) return;
-    populateAllCategories();
+    // Solo genera si no hay noticias recientes
+    const hasRecent = newsList.some((n) => Date.now() - new Date(n.createdAt).getTime() < 6 * 3600000);
+    if (!hasRecent && !isSearchingRef.current) generateAllNewsInOneCall();
     const iv = setInterval(() => {
-      if (!isSearchingRef.current) { initiatedBulkCategories.current.clear(); populateAllCategories(); }
-    }, 15 * 60 * 1000);
+      if (!isSearchingRef.current) generateAllNewsInOneCall();
+    }, 60 * 60 * 1000); // Cada hora
     return () => clearInterval(iv);
   }, [user]);
 
-  // AUTO FETCH EMPTY CATEGORY
-  useEffect(() => {
-    if (!user || isSearchingRef.current) return;
-    const catNews = activeCategory === "Portada" ? newsList : newsList.filter((n) => n.category?.toLowerCase() === activeCategory.toLowerCase());
-    if (catNews.length === 0 && !initiatedBulkCategories.current.has(activeCategory)) discoverAutonomousNews();
-  }, [activeCategory, user]);
+  // AUTO FETCH EMPTY CATEGORY - desactivado para ahorrar cuota
+  // useEffect(() => { ... }, [activeCategory, user]);
 
   // ── CORE AI ───────────────────────────────────────────────────────────────
+  const generateAllNewsInOneCall = async () => {
+    if (!user || isSearchingRef.current) return;
+    setIsSearching(true); isSearchingRef.current = true; setError(null);
+    setSyncingStatus("Buscando noticias globales...");
+    const cc = selectedCountry !== "Mundial" ? `País: ${selectedCountry}.` : "Cobertura global.";
+    try {
+      const res = await getAI().models.generateContent({
+        model: GEMINI_MODEL,
+        systemInstruction: SYSTEM_INSTRUCTION,
+        contents: `MISIÓN: Busca las 10 noticias más importantes del mundo HOY. ${cc} Idioma: ${langName}.
+Cubre variedad de categorías: Mundo, Política, Economía, Tecnología, Deportes, Ciencia, Cultura.
+Para cada noticia: mínimo 4 párrafos, imageKeyword en inglés específica al evento (NO "news"), videoUrl de YouTube real o null.
+
+Responde ÚNICAMENTE con JSON array sin markdown ni texto adicional:
+[{"title":"...","content":"...","category":"...","imageKeyword":"...","videoUrl":"...","sources":[]}]`,
+        config: { tools: [{ googleSearch: {} }] },
+      });
+      const data = safeParseJSON(res.text || "[]");
+      let count = 0;
+      for (const item of data) {
+        if (item.title && item.content) {
+          await addDoc(collection(db, "news"), {
+            ...item,
+            sourceQuery: "Auto:Global",
+            category: item.category || "Mundo",
+            imageKeyword: item.imageKeyword || "world",
+            videoUrl: item.videoUrl || null,
+            sources: item.sources || [],
+            createdAt: new Date().toISOString(),
+            authorId: user.uid,
+          });
+          count++;
+        }
+      }
+      if (count === 0) setError("No se generaron noticias. Intenta de nuevo.");
+    } catch (e: any) {
+      console.error(e);
+      setError(`Error: ${e.message || "desconocido"}`);
+    } finally {
+      setIsSearching(false);
+      isSearchingRef.current = false;
+      setSyncingStatus(null);
+    }
+  };
+
   const fetchOneCategory = async (cat: string) => {
     const cc = selectedCountry !== "Mundial" ? `Enfócate en ${selectedCountry}.` : "Cobertura global.";
     const res = await getAI().models.generateContent({
