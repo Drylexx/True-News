@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import {
   Globe,
   Bot,
@@ -40,7 +40,7 @@ const getAI = () => {
 };
 
 // ─── CORRECT MODEL ──────────────────────────────────────────────────────────
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-1.5-flash";
 
 // ─── SYSTEM INSTRUCTION ─────────────────────────────────────────────────────
 const SYSTEM_INSTRUCTION = `Eres TRUE NEWS ENGINE — un sistema de periodismo completamente autónomo e independiente.
@@ -247,23 +247,11 @@ export default function App() {
       contents: `MISIÓN: Busca 4-6 noticias reales de HOY sobre "${cat}". ${cc}
 PROCESO: Buscar → Filtrar (solo 24h, 2+ fuentes) → Verificar → Redactar en ${langName} con 6 párrafos:
 P1:Hecho+cifras P2:Contexto P3:Involucrados P4:Reacciones P5:Impacto P6:Perspectivas
-imageKeyword: 1 palabra en inglés específica al evento (NO "news"). videoUrl: YouTube real o null.`,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING }, content: { type: Type.STRING },
-              category: { type: Type.STRING }, imageKeyword: { type: Type.STRING },
-              videoUrl: { type: Type.STRING }, sources: { type: Type.ARRAY, items: { type: Type.STRING } },
-            },
-            required: ["title", "content", "category", "imageKeyword"],
-          },
-        },
-      },
+imageKeyword: 1 palabra en inglés específica al evento (NO "news"). videoUrl: YouTube real o null.
+
+Responde ÚNICAMENTE con un JSON array válido sin markdown ni texto adicional:
+[{"title":"...","content":"...","category":"...","imageKeyword":"...","videoUrl":"...","sources":[]}]`,
+      config: { tools: [{ googleSearch: {} }] },
     });
     const data = safeParseJSON(res.text || "[]");
     for (const item of data) {
@@ -306,23 +294,11 @@ imageKeyword: 1 palabra en inglés específica al evento (NO "news"). videoUrl: 
     try {
       const res = await getAI().models.generateContent({
         model: GEMINI_MODEL, systemInstruction: SYSTEM_INSTRUCTION,
-        contents: `MISIÓN: 4-6 noticias reales sobre "${ctx}". ${cc} Idioma: ${langName}. 6 párrafos mínimo. imageKeyword específica. videoUrl real o null.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING }, content: { type: Type.STRING },
-                category: { type: Type.STRING }, imageKeyword: { type: Type.STRING },
-                videoUrl: { type: Type.STRING }, sources: { type: Type.ARRAY, items: { type: Type.STRING } },
-              },
-              required: ["title","content","category","imageKeyword"],
-            },
-          },
-        },
+        contents: `MISIÓN: 4-6 noticias reales de HOY sobre "${ctx}". ${cc} Idioma: ${langName}. 6 párrafos mínimo. imageKeyword específica (NO "news"). videoUrl YouTube real o null.
+
+Responde ÚNICAMENTE con JSON array sin markdown:
+[{"title":"...","content":"...","category":"...","imageKeyword":"...","videoUrl":"...","sources":[]}]`,
+        config: { tools: [{ googleSearch: {} }] },
       });
       const data = safeParseJSON(res.text || "[]");
       let count = 0;
