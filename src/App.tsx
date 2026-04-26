@@ -40,7 +40,7 @@ const getAI = () => {
 };
 
 // ─── CORRECT MODEL ──────────────────────────────────────────────────────────
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash-lite";
 
 // ─── SYSTEM INSTRUCTION ─────────────────────────────────────────────────────
 const SYSTEM_INSTRUCTION = `Eres TRUE NEWS ENGINE — un sistema de periodismo completamente autónomo e independiente.
